@@ -8,8 +8,9 @@ var io = require("socket.io")(server);
 const expressSitemapXml = require('express-sitemap-xml');
 const bodyParser = require('body-parser');
 
+/* Put your website here */
 var site = {
-  link: "https://bingo.joshuaduma.ca/",
+  link: "https://example.com/",
   pages: [
       "/"
   ],
@@ -37,21 +38,28 @@ app.use(bodyParser.urlencoded({
 
 app.use(bodyParser.json());
 
+/* If you are using google ads, place your information here. */
+/*
 app.get('/ads.txt', function (req, res) {
-  res.send("google.com, pub-1341988907947441, DIRECT, f08c47fec0942fa0");
+  res.send("google.com, <GOOGLE ADS ID, ex. starts with 'pub-'>, DIRECT, <GOOGLE ADS SECRET>");
 });
+*/
 
+/* If you are using pre-render to render the page for search engines, set up a pre-render server before-hand. */
+/*
 var prerender = require('prerender-node');
 prerender.protocol = 'https';
 app.use(prerender.set('prerenderServiceUrl', 'http://localhost:3000/'));
+*/
 
 var mysql = require('mysql2');
 
+/* To save progress, use MySQL. */
 var fun = mysql.createConnection({
   host: 'localhost',
   database: 'fun',
   user: 'fun',
-  password: 'afafDFAF2#!$!$!414aFDFAGAGFGafga',
+  password: '<DB PASSWORD>',
   port: 3306
 }); // Connect to mysql.
 
@@ -69,35 +77,8 @@ app.use(sessionMiddleware);
 
 app.use(express.static('bingo'))
 
+/* Change to port you want. */
 server.listen(2021);
-
-/*
-New member,
-Like to sing,
-Like to paint,
-Play piano,
-Have read Colossians,
-Like graphic design,
-Play guitar,
-Like to build things,
-Like video games,
-Like coffee,
-Have pulled an all-nighter,
-Like CAD design,
-Like to hike,
-Have lived outside of Canada,
-Like to do research,
-Like science,
-Have pets,
-Like to draw,
-Like anime,
-Like Fortnite,
-Have siblings,
-Returning member,
-Can speak another language,
-Like sports,
-Like to cook
-*/
 
 var answers = [
   "New member",
@@ -128,15 +109,6 @@ var answers = [
 ]; // Game answers
 
 function saveGame() {
-  /*
-   console.log("INSERT INTO fun.fun (`id`, `data`) VALUES (0, '" + JSON.stringify({
-    rooms: rooms,
-    adminKeys: adminKeys
-  }) + "') ON DUPLICATE KEY UPDATE `data` = '" + JSON.stringify({
-    rooms: rooms,
-    adminKeys: adminKeys
-  }) + "'");
-  */
   fun.query("INSERT INTO fun.fun (`id`, `data`) VALUES (0, ?) ON DUPLICATE KEY UPDATE `data` = ?", [JSON.stringify({
       rooms: rooms,
       adminKeys: adminKeys
@@ -267,7 +239,6 @@ fun.query('SELECT * FROM fun.fun', function (err, result, fields) {
 });
 
 io.on('connection', function (socket) {
-  console.log(socket.request.session);
   if (!socket.request.session.uuid) {
     socket.request.session.uuid = socket.id
   } // Check if user has a uuid, set one if not.
@@ -301,12 +272,9 @@ io.on('connection', function (socket) {
   } // If the player is an admin */
 
   socket.on('createRoom', function (response) {
-    console.log("Creating Room!");
     var info = JSON.parse(response);
-    console.log(info);
 
     roomID = makeid(5);
-    console.log(roomID);
 
     socket.join(roomID); // Join newely created room.
 
@@ -352,7 +320,6 @@ io.on('connection', function (socket) {
     })); // Send response if user joined a room.
 
     adminKeys[roomID] = makeid(26);
-    console.log(adminKeys[roomID]);
 
     socket.emit('adminKey', adminKeys[roomID]); // Send the user an adminKey
 
@@ -362,16 +329,8 @@ io.on('connection', function (socket) {
   socket.on('joinRoom', function (reesponse) {
     var info = JSON.parse(reesponse);
 
-    console.log("LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
-
     player.name = info.playerName;
     if (info.roomID in rooms) {
-      console.log("-----------");
-      console.log(info.roomID);
-      console.log(info);
-      console.log(adminKeys);
-      console.log(info.adminKey);
-      console.log("-----------");
       if (info.adminKey == adminKeys[info.roomID]) {
         admin = true;
       } else {
@@ -394,7 +353,6 @@ io.on('connection', function (socket) {
       if (typeof info.userID !== 'undefined' && isReturningPlayer) {
         userID = info.userID;
         rooms[roomID].data.players[userID].isActive = true;
-        console.log(info.userID);
       } // Get UserID, if provided by the user. DELETE FOR TESTING
       else{
         rooms[roomID].data.players[userID] = {};
@@ -413,12 +371,6 @@ io.on('connection', function (socket) {
           }
         }
       }
-
-      console.log(admin);
-      console.log(objSize(rooms[roomID].data.players));
-      console.log(rooms[roomID].data.admin.maxPlayers);
-      console.log("0000000000000000000000000000000000");
-      console.log(rooms[roomID].data.remainingCalls);
 
       /*
       if(!admin && objSize(rooms[roomID].data.players) >= (rooms[roomID].data.admin.maxPlayers + 1)){
@@ -523,8 +475,7 @@ io.on('connection', function (socket) {
 
   socket.on('playerNameChange', function (response) {
     try {
-      rooms[roomID].data.players[userID].name = response.substring(1, response.length - 1);;
-      console.log(rooms[roomID].data.players[userID].name);
+      rooms[roomID].data.players[userID].name = response.substring(1, response.length - 1);
       io.to(roomID).emit('players', JSON.stringify(rooms[roomID].data)); // Send all rooms[roomID].data.
     } catch {}
 
@@ -532,10 +483,8 @@ io.on('connection', function (socket) {
   }); // Player changed name
 
   socket.on('clickedBlock', function (response) {
-    console.log(roomID);
     try {
       var block = JSON.parse(response);
-      console.log("BLock ID: " + block.blockID);
 
       for (key in rooms[roomID].data.players[userID].grid) {
         if (rooms[roomID].data.players[userID].grid[key].index == block.blockID) {
@@ -640,9 +589,7 @@ io.on('connection', function (socket) {
   });
 
   socket.on('disconnect', function (socket) { // player disconnect event
-    console.log("Removing player");
     try {
-      // console.log(delete rooms[roomID].data.players[userID]);
       for (key in rooms[roomID].data.admin.calls) {
         rooms[roomID].data.players[userID].clickedCurrent = false;
       }
