@@ -26,11 +26,13 @@
 <br />
 <p align="center">
 
-  <h3 align="center">WPA Small Group Bingo</h3>
+  <h3 align="center">Bingo</h3>
 
   <p align="center">
-    This web app is a multi-player bingo game with a pre-set list of questions. The players must select the block chosen by the admin and must complete a column, row or diagonal to win. The chosen blook must also be a true fact about the player.
+    This web app is a multi-player bingo game that accepts custom questions. The players must select the block chosen by the admin and must complete a column, row or diagonal to win. The chosen blook must also be a true fact about the player.
     <br />
+    The app uses 25 randomly selected questions from a list that the user provides and every answer is randomly selected by the game admin.
+      <br />
     <a href="https://bingo.joshuaduma.ca">View Demo</a>
   </p>
 </p>
@@ -72,7 +74,7 @@ The purpose of this project is to provide a bingo board for each member of the 3
 * []()Jquery
 * []()NodeJS
 * []()Ngnix
-* []()PM2
+* []()PM2 
 * []()Socket.io
 * []()Javascript
 * []()Boostrap 5
