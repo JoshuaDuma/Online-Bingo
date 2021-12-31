@@ -1,6 +1,22 @@
 var express = require("express");
 var Server = require("http").Server;
 var session = require("express-session");
+const sqlite3 = require('sqlite3').verbose();
+let db = new sqlite3.Database('./fun.db', sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, (err) => {
+  if (err) {
+    console.error(err.message);
+  }
+  console.log('Connected to the database.');
+});
+
+db.serialize(() => {
+  db.each(`CREATE TABLE IF NOT EXISTS fun (id text, data text)`, (err, row) => {
+    if (err) {
+      console.error(err.message);
+    }
+    console.log(row.id + "\t" + row.name);
+  });
+});
 
 var app = express();
 var server = Server(app);
@@ -36,19 +52,7 @@ app.use(bodyParser.urlencoded({
 
 app.use(bodyParser.json());
 
-var prerender = require('prerender-node');
-prerender.protocol = 'https';
-app.use(prerender.set('prerenderServiceUrl', 'http://localhost:3000/'));
-
 var mysql = require('mysql2');
-
-var fun = mysql.createConnection({
-  host: 'localhost',
-  database: 'fun',
-  user: 'fun',
-  password: 'afafDFAF2#!$!$!414aFDFAGAGFGafga',
-  port: 3306
-}); // Connect to mysql.
 
 var sessionMiddleware = session({
   saveUninitialized: false,
@@ -67,26 +71,30 @@ app.use(express.static('./'))
 server.listen(2021);
 
 function saveGame() {
-  /*
-   console.log("INSERT INTO fun.fun (`id`, `data`) VALUES (0, '" + JSON.stringify({
-    rooms: rooms,
-    adminKeys: adminKeys
-  }) + "') ON DUPLICATE KEY UPDATE `data` = '" + JSON.stringify({
-    rooms: rooms,
-    adminKeys: adminKeys
-  }) + "'");
-  */
-  fun.query("INSERT INTO fun.fun (`id`, `data`) VALUES (0, ?) ON DUPLICATE KEY UPDATE `data` = ?", [JSON.stringify({
-    rooms: rooms,
-    adminKeys: adminKeys
-  }),
-  JSON.stringify({
-    rooms: rooms,
-    adminKeys: adminKeys
-  })
-  ], function (err) {
-    if (err) throw err;
-  }); // Save games.
+  db.serialize(() => {
+    var string = JSON.stringify({
+      rooms: rooms,
+      adminKeys: adminKeys
+    })
+    db.all("SELECT id from fun", (err, rows) => {
+      if (err) {
+        console.error(err.message);
+      }
+      if (rows.length > 0) {
+        db.each("UPDATE fun SET data = '" + string + "' WHERE id = 0", (err, row) => {
+          if (err) {
+            console.error(err.message);
+          }
+        });
+      } else {
+        db.each("INSERT INTO fun (`id`, `data`) VALUES (0, '" + string + "')", (err, row) => {
+          if (err) {
+            console.error(err.message);
+          }
+        });
+      }
+    });
+  });
 }
 
 function everythingGrid(array) {
@@ -175,10 +183,10 @@ var rooms = {}; // Stores all room data.
 
 var adminKeys = {}; // Stores all admin key data.
 
-fun.query('SELECT * FROM fun.fun', function (err, result) {
+db.all("SELECT * FROM fun", (err, rows) => {
   if (err) throw err;
-  if (result.length > 0) {
-    var data = result[0].data;
+  if (rows.length > 0) {
+    var data = JSON.parse(rows[0].data);
     rooms = data.rooms; // Stores all room data.
 
     adminKeys = data.adminKeys; // Stores all admin key data.
@@ -445,7 +453,7 @@ io.on('connection', function (socket) {
       rooms[roomID].data.players[userID].name = response.substring(1, response.length - 1);;
       console.log(rooms[roomID].data.players[userID].name);
       io.to(roomID).emit('players', JSON.stringify(rooms[roomID].data)); // Send all rooms[roomID].data.
-    } catch { }
+    } catch {}
 
     saveGame();
   }); // Player changed name
@@ -567,7 +575,7 @@ io.on('connection', function (socket) {
       rooms[roomID].data.players[userID].isActive = false; // Make player inactive;
       socket.leave(roomID);
       io.to(roomID).emit('players', JSON.stringify(rooms[roomID].data)); // Send all rooms[roomID].data.
-    } catch { }
+    } catch {}
 
     saveGame();
   });
