@@ -1,3 +1,6 @@
+## Demo
+Check out the demo hosted at https://bingo.joshuaduma.ca/
+
 # SmallGroupBingo
 <!--
 *** Thanks for checking out the Best-README-Template. If you have a suggestion
